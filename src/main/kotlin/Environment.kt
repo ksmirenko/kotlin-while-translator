@@ -1,8 +1,13 @@
-class Environment {
+import java.io.OutputStream
+import java.util.*
+
+class Environment(private val inScanner : Scanner, private val outStream : OutputStream) {
+    private val map = HashMap<String, Int>()
+
     /**
      * Gets the value of a variable.
      */
-    fun getVar(name : String) : Int? = null
+    fun getVar(name : String) : Int? = map[name]
 
     /**
      * Sets the variable [name] to [value].
@@ -20,6 +25,8 @@ class Environment {
      * Writes the number to output stream.
      */
     fun writeInt(number : Int) {
+        Scanner(System.`in`)
+
     }
 
 }

@@ -8,7 +8,7 @@ interface Stmt {
 /**
  * Does nothing.
  */
-class Skip : Stmt {
+object Skip : Stmt {
     override fun exec(env : Environment) {
     }
 }
@@ -16,8 +16,8 @@ class Skip : Stmt {
 /**
  * [name] := [value]
  */
-class Assign(private val name : String, private val value : Int) : Stmt {
-    override fun exec(env : Environment) = env.setVar(name, value)
+class Assign(private val name : String, private val value : Expr) : Stmt {
+    override fun exec(env : Environment) = env.setVar(name, value.calc(env))
 }
 
 /**

@@ -8,14 +8,19 @@ interface Expr {
 /**
  * A const.
  */
-class Const(private val value : Int) : Expr {
+class Const(val value : Int) : Expr {
     override fun calc(env : Environment) : Int = value
+
+    override fun equals(other : Any?) =
+        other is Const && other.value.equals(value)
+
+    override fun hashCode() = value
 }
 
 /**
  * An integer variable.
  */
-class Var(private val name : String) : Expr {
+class Var(val name : String) : Expr {
     override fun calc(env : Environment) : Int {
         val value = env.getVar(name)
         if (value != null) {
@@ -25,55 +30,43 @@ class Var(private val name : String) : Expr {
             throw IllegalStateException("Variable $name not defined")
         }
     }
+
+    override fun equals(other : Any?) =
+        other is Var && other.name.equals(name)
+
+    override fun hashCode() = name.hashCode()
 }
 
-// Arithmetic operations
+class BinOp(val opType : Char, val left : Expr, val right : Expr) : Expr {
+    override fun calc(env : Environment) : Int {
+        val leftVal = left.calc(env)
+        val rightVal = right.calc(env)
+        return when (opType) {
+            '+' -> leftVal + rightVal
+            '-' -> leftVal - rightVal
+            '*' -> leftVal * rightVal
+            '/' -> leftVal / rightVal
+            '%' -> leftVal % rightVal
+            '~' -> if (leftVal == rightVal) 1 else 0
+            '!' -> if (leftVal != rightVal) 1 else 0
+            '>' -> if (leftVal > rightVal) 1 else 0
+            '<' -> if (leftVal < rightVal) 1 else 0
+            '&' -> if (leftVal != 0 && rightVal != 0) 1 else 0
+            '|' -> if (leftVal != 0 || rightVal != 0) 1 else 0
+            else -> {
+                throw IllegalStateException()
+            }
+        }
+    }
 
-class Plus(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = left.calc(env) + right.calc(env)
-}
+    override fun equals(other : Any?) =
+        other is BinOp && other.opType.equals(opType)
+            && other.left.equals(left) && other.right.equals(right)
 
-class Minus(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = left.calc(env) - right.calc(env)
-
-}
-
-class Mult(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = left.calc(env) * right.calc(env)
-}
-
-class Div(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = left.calc(env) / right.calc(env)
-}
-
-class Mod(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = left.calc(env) % right.calc(env)
-}
-
-// Comparison operators which return 1 or 0
-
-class Eq(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = if (left.calc(env) == right.calc(env)) 1 else 0
-}
-
-class Neq(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = if (left.calc(env) != right.calc(env)) 1 else 0
-}
-
-class More(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = if (left.calc(env) != right.calc(env)) 1 else 0
-}
-
-class Less(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = if (left.calc(env) != right.calc(env)) 1 else 0
-}
-
-// Boolean operations, which take 0 for false and everything else for true and return 1 or 0.
-
-class And(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = if ((left.calc(env) != 0) && (right.calc(env) != 0)) 1 else 0
-}
-
-class Or(private val left : Expr, private val right : Expr) : Expr {
-    override fun calc(env : Environment) : Int = if ((left.calc(env) != 0) || (right.calc(env) != 0)) 1 else 0
+    override fun hashCode() : Int {
+        var result = opType.hashCode()
+        result = 31 * result + left.hashCode()
+        result = 31 * result + right.hashCode()
+        return result
+    }
 }

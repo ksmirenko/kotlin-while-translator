@@ -8,20 +8,30 @@ class CodeStream(rawCode : String) {
     private var codeCursor = 0
 
     init {
-        code = rawCode.split(' ')
+        code = rawCode.split(' ', '\n', '\t').filter { it != "" }
     }
 
     /**
      * Moves the cursor one symbol back.
-     * Kinda workaround.
      */
     fun rollBack() = --codeCursor
+
+    /**
+     * Returns the next element without moving the stream cursor forward.
+     */
+    fun lookAhead() =
+        try {
+            code[codeCursor]
+        }
+        catch (e : ArrayIndexOutOfBoundsException) {
+            throw Exception("Unexpected end of stream")
+        }
 
     fun read() =
         try {
             code[codeCursor++]
         }
-        catch (e: ArrayIndexOutOfBoundsException) {
+        catch (e : ArrayIndexOutOfBoundsException) {
             throw Exception("Unexpected end of stream")
         }
 

@@ -13,20 +13,19 @@ class Environment(private val inScanner : Scanner, private val outStream : Outpu
      * Sets the variable [name] to [value].
      */
     fun setVar(name : String, value : Int) {
+        map.put(name, value)
     }
 
     /**
      * Reads the next integer from input stream.
-     * @return The read integer number or null, if stream is empty.
      */
-    fun readInt() : Int? = null
+    fun readInt() : Int = inScanner.nextInt()
 
     /**
      * Writes the number to output stream.
      */
     fun writeInt(number : Int) {
-        Scanner(System.`in`)
-
+        outStream.write(number)
     }
 
 }

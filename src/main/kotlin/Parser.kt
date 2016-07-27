@@ -4,8 +4,7 @@ import java.util.*
  * Parser of While code.
  */
 class Parser(rawCode : String) {
-    val codeStream : CodeStream
-    var ast : Stmt = Skip
+    private val codeStream : CodeStream
 
     private val keywords = Keyword.values().map { it.v }
     private val binOps = hashMapOf(
@@ -24,33 +23,47 @@ class Parser(rawCode : String) {
     fun parseStmt() : Stmt {
         if (codeStream.isEmpty())
             throw IllegalArgumentException("Unexpected end of stream")
-        val stmt = when (codeStream.read()) {
+        val curToken = codeStream.read()
+        val stmt = when (curToken) {
             Keyword.SKIP.v ->
                 Skip
             Keyword.READ.v ->
                 Read(parseVarName())
             Keyword.WRITE.v ->
                 Write(parseExpr())
-            Keyword.ASSIGN.v ->
-                Assign(parseVarName(), parseExpr())
-            Keyword.SEQ.v ->
-                throw IllegalArgumentException("Unexpected semicolon")
-            Keyword.IF.v ->
-                If(parseExpr(), parseStmt(), parseStmt())
-            Keyword.WHILE.v ->
-                While(parseExpr(), parseStmt())
+            Keyword.IF.v -> {
+                val ifCondition = parseExpr()
+                parseParenthesis(true)
+                val ifTrueStmt = parseStmt()
+                parseParenthesis(false)
+                parseParenthesis(true)
+                val ifFalseStmt = parseStmt()
+                parseParenthesis(false)
+                If(ifCondition, ifTrueStmt, ifFalseStmt)
+            }
+            Keyword.WHILE.v -> {
+                val whileCondition = parseExpr()
+                parseParenthesis(true)
+                val whileStmt = parseStmt()
+                parseParenthesis(false)
+                While(whileCondition, whileStmt)
+            }
             else -> {
-                throw IllegalArgumentException("Syntax error")
+                // a var name, a semicolon or a syntax error
+                if (curToken.isValidVarName() && !codeStream.isEmpty()
+                    && codeStream.lookAhead() == Keyword.ASSIGN.v) {
+                    codeStream.read()
+                    Assign(curToken, parseExpr())
+                }
+                else
+                    throw IllegalArgumentException("Syntax error")
             }
         }
-        if (!codeStream.isEmpty()) {
-            if (codeStream.read() == Keyword.SEQ.v)
-                return Seq(stmt, parseStmt())
-            else
-                throw IllegalArgumentException("Syntax error")
+        if (!codeStream.isEmpty() && codeStream.lookAhead() == Keyword.SEQ.v) {
+            codeStream.read()
+            return Seq(stmt, parseStmt())
         }
-        else
-            return stmt
+        return stmt
     }
 
     fun parseExpr() : Expr {
@@ -76,9 +89,9 @@ class Parser(rawCode : String) {
             val curToken = codeStream.read()
             val curBinOpIndex = binOps.keys.indexOf(curToken[0])
             when {
-                curBinOpIndex > -1 -> {  // binary operator
-                    while (workStack.isNotEmpty() && workStack.peek() != '(' &&
-                        binOps[curToken[0]]!! <= binOps[workStack.peek()]!!) {
+                curToken.length == 1 && curBinOpIndex > -1 -> {  // binary operator
+                    while (workStack.isNotEmpty() && workStack.peek() != '('
+                        && binOps[curToken[0]]!! <= binOps[workStack.peek()]!!) {
                         pushOperator(workStack.pop())
 
                     }
@@ -127,6 +140,13 @@ class Parser(rawCode : String) {
         return exprOutputStack.pop()
     }
 
+    private fun parseParenthesis(isLeft : Boolean) {
+        if (codeStream.isEmpty() || codeStream.read() != if (isLeft) "{" else "}")
+            throw IllegalArgumentException(
+                "Syntax error: expected ${if (isLeft) "an opening" else "a closing"} parenthesis"
+            )
+    }
+
     private fun parseVarName() : String {
         val varName : String = codeStream.read()
         if (!varName.isValidVarName())
@@ -137,6 +157,6 @@ class Parser(rawCode : String) {
 
 
     private fun String.isValidVarName() =
-        fold(this[0].isLetter(), { v, c -> v && c.isLetterOrDigit() }) &&
-            this !in keywords
+        fold(this[0].isLetter(), { v, c -> v && c.isLetterOrDigit() })
+            && this !in keywords
 }

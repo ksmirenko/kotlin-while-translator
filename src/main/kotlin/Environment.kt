@@ -1,7 +1,7 @@
-import java.io.OutputStream
+import java.io.PrintStream
 import java.util.*
 
-class Environment(private val inScanner : Scanner, private val outStream : OutputStream) {
+class Environment(private val inIntProvider : IIntProvider, private val outPrintStream : PrintStream) {
     private val map = HashMap<String, Int>()
 
     /**
@@ -19,13 +19,13 @@ class Environment(private val inScanner : Scanner, private val outStream : Outpu
     /**
      * Reads the next integer from input stream.
      */
-    fun readInt() : Int = inScanner.nextInt()
+    fun readInt() : Int = inIntProvider.nextInt()
 
     /**
      * Writes the number to output stream.
      */
     fun writeInt(number : Int) {
-        outStream.write(number)
+        outPrintStream.println(number.toString())
     }
 
 }
